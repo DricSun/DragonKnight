@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "dat.gui": "^0.7.9",
+    "three": "^0.175.0",
+    "three-stdlib": "^2.35.14"
+  },
+  "devDependencies": {
+    "vite": "^6.2.3"
+  }
+}
