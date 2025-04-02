@@ -148,7 +148,6 @@ loaderKnight.load('assets/artorias.glb', (gltf) => {
         attackAction = knightMixer.clipAction(attackClip);
         attackAction.setLoop(THREE.LoopOnce);
         attackAction.clampWhenFinished = true;
-
     }
 
 }, undefined, (error) => console.error('Erreur chargement chevalier', error));
@@ -167,10 +166,33 @@ window.addEventListener('keyup', (event) => {
 const keys = {};
 const moveSpeed = 0.2;
 const runSpeed = 0.4;  // Vitesse de course
-window.addEventListener('keydown', (event) => { keys[event.key.toLowerCase()] = true; });
-window.addEventListener('keyup', (event) => { keys[event.key.toLowerCase()] = false; });
 
+// Raycaster pour détecter les clics sur le dragon
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
+// Gestionnaire d'événement pour le clic de souris
+window.addEventListener('click', (event) => {
+    // Convertir les coordonnées de la souris en coordonnées normalisées (-1 à +1)
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    
+    // Mettre à jour le raycaster avec la position de la souris et de la caméra
+    raycaster.setFromCamera(mouse, camera);
+    
+    // Vérifier si le dragon est cliqué
+    if (dragonModel) {
+        const intersects = raycaster.intersectObject(dragonModel, true);
+        
+        if (intersects.length > 0) {
+            console.log("Dragon cliqué !");
+            // Jouer l'animation du dragon
+            if (dragonAnimation && !dragonAnimation.isRunning()) {
+                dragonAnimation.reset().play();
+            }
+        }
+    }
+});
 
 // Fonction de mise à jour du mouvement du chevalier
 function updateKnightMovement() {
@@ -222,7 +244,6 @@ function updateKnightMovement() {
         }
     }
 }
-
 
 // GUI
 const gui = new GUI();
