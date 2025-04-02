@@ -96,57 +96,24 @@ loaderDragon.load('assets/black_dragon_with_idle_animation.glb', (gltf) => {
     scene.add(dragonModel);
 }, undefined, (error) => console.error('Erreur chargement dragon', error));
 
-// Raycaster pour détecter les clics de souris
-const raycaster = new Raycaster();
-const mouse = new THREE.Vector2();
-
-window.addEventListener('click', onMouseClick, false);
-function onMouseClick(event) {
-    // Calculer la position de la souris dans le système de coordonnées normalisées (-1 à +1)
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    // Mettre à jour le raycaster avec la position de la souris
-    raycaster.setFromCamera(mouse, camera);
-
-    // Vérifier les intersections
-    const intersects = raycaster.intersectObject(dragonModel, true);
-
-    if (intersects.length > 0) {
-        console.log("Dragon cliqué !");
-
-        // Lancer l'animation du dragon si disponible
-        if (dragonAnimation) {
-            dragonAnimation.reset().play();
-            dragonAnimation.timeScale = 0.5;
-        }
-    }
-}
-
-
-
-
-// Charger le chevalier (knight4)
+// Déplacement du chevalier (knight4)
 const loaderKnight = new GLTFLoader();
-let knightModel = null, knightMixer = null, walkAction = null, attackAction = null;
+let knightModel = null, knightMixer = null, walkAction = null, runAction = null, attackAction = null;
 let knightGroup = null;
 
-loaderKnight.load('assets/knight4.glb', (gltf) => {
+loaderKnight.load('assets/artorias.glb', (gltf) => {
     knightGroup = new THREE.Group();
     scene.add(knightGroup);
 
     knightModel = gltf.scene;
     knightGroup.add(knightModel);
 
-    // Réduire la taille du chevalier
-    knightGroup.scale.set(1, 1, 1); // Réduire la taille du chevalier
-
-    knightGroup.position.set(0, -5, 30);
+    knightGroup.scale.set(8, 8, 8);
+    knightGroup.position.set(0, -14, 30);
     knightGroup.rotation.y = Math.PI;
 
     knightModel.traverse((child) => {
         if (child.isMesh) {
-            console.log(child.material);
             child.castShadow = true;
             child.receiveShadow = true;
         }
@@ -154,7 +121,13 @@ loaderKnight.load('assets/knight4.glb', (gltf) => {
 
     knightMixer = new THREE.AnimationMixer(knightModel);
 
-    // Charger l'animation de marche
+    // Affichage des animations dans la console
+    console.log("Animations disponibles :");
+    gltf.animations.forEach((anim, index) => {
+        console.log(`${index + 1}: ${anim.name}`);
+    });
+
+    // Charger l'animation de marche (si elle existe)
     const walkClip = gltf.animations.find(anim => anim.name.toLowerCase().includes("walk"));
     if (walkClip) {
         walkAction = knightMixer.clipAction(walkClip);
@@ -162,68 +135,94 @@ loaderKnight.load('assets/knight4.glb', (gltf) => {
         walkAction.clampWhenFinished = false;
     }
 
+    // Charger l'animation de course avec le nom exact "[Action Stash].002"
+    const runClip = gltf.animations.find(anim => anim.name === "[Action Stash].002");
+    if (runClip) {
+        runAction = knightMixer.clipAction(runClip);
+        runAction.setLoop(THREE.LoopRepeat);
+    }
+
     // Charger l'animation d'attaque
-    const attackClip = gltf.animations.find(anim => anim.name.toLowerCase().includes("attack"));
+    const attackClip = gltf.animations.find(anim => anim.name === "[Action Stash].003");
     if (attackClip) {
         attackAction = knightMixer.clipAction(attackClip);
         attackAction.setLoop(THREE.LoopOnce);
         attackAction.clampWhenFinished = true;
+
     }
+
 }, undefined, (error) => console.error('Erreur chargement chevalier', error));
+
+window.addEventListener('keydown', (event) => { 
+    keys[event.key.toLowerCase()] = true;
+    if (event.key.toLowerCase() === 'a' && attackAction && !attackAction.isRunning()) {
+        attackAction.reset().play(); // Jouer l'attaque si l'animation n'est pas déjà en cours
+    }
+});
+window.addEventListener('keyup', (event) => { 
+    keys[event.key.toLowerCase()] = false;
+});
 
 // Déplacement du chevalier
 const keys = {};
 const moveSpeed = 0.2;
+const runSpeed = 0.4;  // Vitesse de course
 window.addEventListener('keydown', (event) => { keys[event.key.toLowerCase()] = true; });
 window.addEventListener('keyup', (event) => { keys[event.key.toLowerCase()] = false; });
 
+
+
+// Fonction de mise à jour du mouvement du chevalier
 function updateKnightMovement() {
-    if (!knightGroup || !walkAction) return;
+    if (!knightGroup || !runAction) return;
 
     let moveX = 0, moveZ = 0;
     let rotationAngle = null;
     let isMoving = false;
 
+    // Déplacement avec les touches
     if (keys['q']) { 
         moveX = -moveSpeed; 
-        rotationAngle = -Math.PI / 2;
+        rotationAngle = -Math.PI / 2; // rotation vers la gauche
         isMoving = true;
     }
     if (keys['d']) { 
         moveX = moveSpeed; 
-        rotationAngle = Math.PI / 2;
+        rotationAngle = Math.PI / 2; // rotation vers la droite
         isMoving = true;
     }
     if (keys['z']) { 
         moveZ = -moveSpeed; 
-        rotationAngle = Math.PI;
+        rotationAngle = Math.PI; // rotation vers l'avant
         isMoving = true;
     }
     if (keys['s']) { 
         moveZ = moveSpeed; 
-        rotationAngle = 0;
+        rotationAngle = 0; // rotation vers l'arrière
         isMoving = true;
     }
 
+    // Appliquer le mouvement
     knightGroup.position.x += moveX;
     knightGroup.position.z += moveZ;
 
+    // Appliquer la rotation si une direction est donnée
     if (rotationAngle !== null) {
         knightGroup.rotation.y = rotationAngle;
     }
 
-    // Gestion de l'animation de marche
-    if (isMoving && !walkAction.isRunning()) {
-        walkAction.reset().play();
-    } else if (!isMoving && walkAction.isRunning()) {
-        walkAction.stop();
-    }
-
-    // Gérer l'attaque avec la touche "A"
-    if (keys['a'] && !attackAction.isRunning()) {
-        attackAction.reset().play();
+    // Jouer l'animation de course si le personnage est en mouvement
+    if (isMoving) {
+        if (!runAction.isRunning()) {
+            runAction.reset().play(); // Lancer l'animation de course si ce n'est pas déjà fait
+        }
+    } else {
+        if (runAction.isRunning()) {
+            runAction.stop(); // Arrêter l'animation si le personnage ne se déplace pas
+        }
     }
 }
+
 
 // GUI
 const gui = new GUI();
