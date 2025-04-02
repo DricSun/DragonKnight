@@ -118,6 +118,7 @@ function onMouseClick(event) {
         // Lancer l'animation du dragon si disponible
         if (dragonAnimation) {
             dragonAnimation.reset().play();
+            dragonAnimation.timeScale = 0.5;
         }
     }
 }
