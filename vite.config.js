@@ -9,7 +9,19 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
       },
+      output: {
+        assetFileNames: (assetInfo) => {
+          // Preserve the original folder structure for assets
+          const extType = assetInfo.name.split('.').at(1);
+          if (/glb|gltf|hdr|fbx/i.test(extType)) {
+            return 'assets/[name][extname]';
+          }
+          return 'assets/[name]-[hash][extname]';
+        },
+      }
     },
+    // Ensure asset files are copied to dist
+    copyPublicDir: true,
   },
   publicDir: 'assets',
   server: {

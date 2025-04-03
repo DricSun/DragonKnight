@@ -1,7 +1,7 @@
 {
     "version": 2,
     "buildCommand": "npx vite build",
-    "installCommand": "npx vite",
+    "installCommand": "npm install",
     "builds": [
       {
         "src": "package.json",
@@ -13,22 +13,32 @@
     ],
     "routes": [
       {
-        "src": "/assets/(.)",
-        "dest": "/$1"
+        "src": "/assets/(.*)",
+        "dest": "/assets/$1"
       },
       {
-        "src": "/assets/(.)\\.js",
+        "src": "/(.*)\\.glb",
+        "headers": { "content-type": "model/gltf-binary" },
+        "dest": "/$1.glb"
+      },
+      {
+        "src": "/(.*)\\.js",
         "headers": { "content-type": "application/javascript" },
         "dest": "/$1.js"
       },
       {
-        "src": "/(.)\\.js",
-        "headers": { "content-type": "application/javascript" },
-        "dest": "/$1.js"
+        "src": "/(.*)\\.glsl",
+        "headers": { "content-type": "text/plain" },
+        "dest": "/$1.glsl"
       },
       {
-        "src": "/(.)",
-        "dest": "/$1"
+        "src": "/(.*)\\.json",
+        "headers": { "content-type": "application/json" },
+        "dest": "/$1.json"
+      },
+      {
+        "src": "/(.*)",
+        "dest": "/index.html"
       }
     ],
     "build": {
