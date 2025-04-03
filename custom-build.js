@@ -16,13 +16,38 @@ try {
     mkdirSync('dist');
   }
   
+  // Copy node_modules libs we need
+  if (!existsSync('dist/lib')) {
+    mkdirSync('dist/lib', { recursive: true });
+  }
+  
+  // Copy three.js files
+  console.log('Copying three.js modules...');
+  writeFileSync('dist/lib/three.module.js', readFileSync('node_modules/three/build/three.module.js'));
+  
+  // Create the orbit controls file
+  if (!existsSync('dist/lib/controls')) {
+    mkdirSync('dist/lib/controls', { recursive: true });
+  }
+  writeFileSync('dist/lib/controls/OrbitControls.js', readFileSync('node_modules/three/examples/jsm/controls/OrbitControls.js'));
+  
+  // Create the loaders directory
+  if (!existsSync('dist/lib/loaders')) {
+    mkdirSync('dist/lib/loaders', { recursive: true });
+  }
+  writeFileSync('dist/lib/loaders/GLTFLoader.js', readFileSync('node_modules/three/examples/jsm/loaders/GLTFLoader.js'));
+  writeFileSync('dist/lib/loaders/DRACOLoader.js', readFileSync('node_modules/three/examples/jsm/loaders/DRACOLoader.js'));
+  
+  // Copy dat.gui
+  writeFileSync('dist/lib/dat.gui.module.js', readFileSync('node_modules/dat.gui/build/dat.gui.module.js'));
+  
   // Read original index.html
   const indexContent = readFileSync('index.html', 'utf-8');
   
   // Modify to point to the correct JS file
   const modifiedIndexContent = indexContent.replace(
     '<script type="module" src="/main.js"></script>',
-    '<script type="module" src="./main.js"></script>'
+    '<script type="module" src="./main-fixed.js"></script>'
   );
   
   // Write modified index.html to dist
@@ -62,12 +87,38 @@ try {
     copyDirectory('shader', 'dist/shader');
   }
   
+  // Create a mapping file to fix imports
+  console.log('Creating mapping wrapper...');
+  writeFileSync('dist/main-fixed.js', `
+// Import mapping wrapper
+import * as THREE from './lib/three.module.js';
+import { OrbitControls } from './lib/controls/OrbitControls.js';
+import { GLTFLoader } from './lib/loaders/GLTFLoader.js';
+import { DRACOLoader } from './lib/loaders/DRACOLoader.js';
+import { GUI } from './lib/dat.gui.module.js';
+
+// Make them available globally
+window.THREE = THREE;
+window.OrbitControls = OrbitControls;
+window.GLTFLoader = GLTFLoader;
+window.DRACOLoader = DRACOLoader;
+window.GUI = GUI;
+
+// Now import the main script
+import './main.js';
+  `);
+  
   // Copy main.js to dist
   console.log('Copying main.js...');
   const mainJsContent = readFileSync('main.js', 'utf-8');
   
-  // Modify main.js to use relative paths
+  // Modify main.js to use relative paths and fix imports
   const modifiedMainJs = mainJsContent
+    .replace(/import\s+\*\s+as\s+THREE\s+from\s+['"]three['"]/g, '// Import THREE from global context')
+    .replace(/import\s+{\s*OrbitControls\s*}\s+from\s+['"]three\/examples\/jsm\/controls\/OrbitControls\.js['"]/g, '// Import OrbitControls from global context')
+    .replace(/import\s+{\s*GLTFLoader\s*}\s+from\s+['"]three\/examples\/jsm\/loaders\/GLTFLoader\.js['"]/g, '// Import GLTFLoader from global context')
+    .replace(/import\s+{\s*DRACOLoader\s*}\s+from\s+['"]three\/examples\/jsm\/loaders\/DRACOLoader\.js['"]/g, '// Import DRACOLoader from global context')
+    .replace(/import\s+{\s*GUI\s*}\s+from\s+['"]dat\.gui['"]/g, '// Import GUI from global context')
     .replace(/('|")\/assets\//g, '$1./assets/')
     .replace(/('|")\/shader\//g, '$1./shader/');
   
