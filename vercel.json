@@ -1,18 +1,8 @@
 {
     "version": 2,
-    "buildCommand": "npm run build",
-    "installCommand": "npm install",
     "framework": "vite",
-    "builds": [
-      {
-        "src": "package.json",
-        "use": "@vercel/static-build",
-        "config": {
-          "distDir": "dist",
-          "nodeVersion": "18.x"
-        }
-      }
-    ],
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist",
     "routes": [
       {
         "src": "/assets/(.*)",
@@ -42,10 +32,5 @@
         "src": "/(.*)",
         "dest": "/index.html"
       }
-    ],
-    "build": {
-      "env": {
-        "NODE_OPTIONS": "--max-old-space-size=4096"
-      }
-    }
+    ]
   }

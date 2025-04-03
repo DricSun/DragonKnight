@@ -2,8 +2,8 @@
   "type": "module",
   "scripts": {
     "dev": "npx vite",
-    "build": "npx vite build",
-    "vercel-build": "npx vite build",
+    "build": "vite build",
+    "vercel-build": "node vercel-build-fix.js",
     "preview": "npx vite preview"
   },
   "dependencies": {
@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "rollup": "^4.39.0",
-    "vite": "^6.2.3"
+    "vite": "^5.1.4"
   },
   "engines": {
     "node": "18.x"
