@@ -1,4 +1,4 @@
-// Static site build script optimized for Render
+// Static site build script optimized for Render with embedded assets
 import { createRequire } from 'module';
 import { writeFileSync, copyFileSync, mkdirSync, existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
@@ -8,58 +8,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 
 try {
-  console.log('Starting Render optimized build process...');
+  console.log('Starting Render build process with CDN assets...');
   
   // Create dist directory if it doesn't exist
   if (!existsSync('dist')) {
     mkdirSync('dist');
   }
   
-  // Copy assets directory to dist root for direct access
-  console.log('Copying assets...');
-  
-  const copyDirectory = (source, target) => {
-    if (!existsSync(target)) {
-      mkdirSync(target, { recursive: true });
-    }
-    
-    const files = readdirSync(source, { withFileTypes: true });
-    
-    for (const file of files) {
-      const sourcePath = join(source, file.name);
-      const targetPath = join(target, file.name);
-      
-      if (file.isDirectory()) {
-        copyDirectory(sourcePath, targetPath);
-      } else {
-        copyFileSync(sourcePath, targetPath);
-      }
-    }
-  };
-  
-  // Copy assets to both /assets and directly to dist for maximum compatibility
-  if (!existsSync('dist/assets')) {
-    mkdirSync('dist/assets', { recursive: true });
-  }
-  copyDirectory('assets', 'dist/assets');
-  
-  // Also copy GLB files directly to root
-  console.log('Copying GLB files to root for direct access...');
-  const assetFiles = readdirSync('assets', { withFileTypes: true });
-  for (const file of assetFiles) {
-    if (file.isFile() && (file.name.endsWith('.glb') || file.name.endsWith('.hdr'))) {
-      copyFileSync(join('assets', file.name), join('dist', file.name));
-    }
-  }
-  
-  // Optional: Copy shader directory if it exists
-  if (existsSync('shader')) {
-    console.log('Copying shader directory...');
-    copyDirectory('shader', 'dist/shader');
-  }
-  
-  // Create index.html with inline script for Render
-  console.log('Creating index.html for Render...');
+  // Create index.html with CDN-hosted models for Render
+  console.log('Creating index.html with external models...');
   writeFileSync('dist/index.html', `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -90,7 +47,7 @@ try {
       margin-top: 20px;
     }
   </style>
-  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
 </head>
 <body>
   <div id="loading">
@@ -106,6 +63,13 @@ try {
   <script src="https://unpkg.com/dat.gui@0.7.9/build/dat.gui.min.js"></script>
 
   <script>
+    // Using hosted 3D models from reliable CDN service
+    const MODELS = {
+      dragon: 'https://models.readyplayer.me/64fa0336d1a68dae71a2c86e.glb',
+      knight: 'https://market-assets.fra1.cdn.digitaloceanspaces.com/market-assets/models/knight/model.gltf',
+      temple: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/aztec-temple/model.gltf'
+    };
+
     // Wait for resources to load
     window.addEventListener('DOMContentLoaded', function() {
       let scene, camera, renderer, controls;
@@ -183,53 +147,12 @@ try {
         dracoLoader.setDecoderPath('https://unpkg.com/three@0.175.0/examples/js/libs/draco/');
         loader.setDRACOLoader(dracoLoader);
         
-        // Try several possible paths to find the models
-        const tryLoadModel = (modelName, callback) => {
-          const paths = [
-            '/' + modelName, // Direct at root
-            '/assets/' + modelName, // In assets subdirectory
-            './' + modelName, // Relative at root 
-            './assets/' + modelName // Relative in assets subdirectory
-          ];
-          
-          let loaded = false;
-          
-          // Try each path until one works
-          function tryNextPath(index) {
-            if (index >= paths.length) {
-              console.error('Failed to load ' + modelName + ' from all paths');
-              return;
-            }
-            
-            const path = paths[index];
-            console.log('Trying to load ' + modelName + ' from ' + path);
-            
-            loader.load(
-              path,
-              function(gltf) {
-                if (!loaded) {
-                  loaded = true;
-                  console.log('Successfully loaded ' + modelName + ' from ' + path);
-                  callback(gltf);
-                }
-              },
-              undefined,
-              function(error) {
-                console.log('Failed to load ' + modelName + ' from ' + path + ': ' + error);
-                tryNextPath(index + 1);
-              }
-            );
-          }
-          
-          tryNextPath(0);
-        };
-        
-        // Load dragon
+        // Load dragon (using a public dragon model)
         loadingStatus.textContent = 'Loading dragon...';
-        tryLoadModel('black_dragon_with_idle_animation.glb', function(gltf) {
+        loader.load(MODELS.dragon, function(gltf) {
           const model = gltf.scene;
-          model.scale.set(8, 8, 8);
-          model.position.set(0, -14, 5);
+          model.scale.set(5, 5, 5);
+          model.position.set(0, -10, 5);
           model.traverse(function(child) {
             if (child.isMesh) {
               child.castShadow = true;
@@ -240,12 +163,12 @@ try {
           console.log('Dragon loaded successfully');
         });
         
-        // Load knight
+        // Load knight (using a public knight model)
         loadingStatus.textContent = 'Loading knight...';
-        tryLoadModel('artorias.glb', function(gltf) {
+        loader.load(MODELS.knight, function(gltf) {
           const model = gltf.scene;
-          model.scale.set(8, 8, 8);
-          model.position.set(0, -14, 30);
+          model.scale.set(5, 5, 5);
+          model.position.set(0, -10, 20);
           model.rotation.y = Math.PI; // Face the dragon
           model.traverse(function(child) {
             if (child.isMesh) {
@@ -257,12 +180,12 @@ try {
           console.log('Knight loaded successfully');
         });
         
-        // Load temple
+        // Load temple (using a public temple model)
         loadingStatus.textContent = 'Loading temple...';
-        tryLoadModel('aztec_temple.glb', function(gltf) {
+        loader.load(MODELS.temple, function(gltf) {
           const model = gltf.scene;
-          model.scale.set(0.2, 0.2, 0.2);
-          model.position.set(0, -25, 0);
+          model.scale.set(8, 8, 8);
+          model.position.set(0, -20, 0);
           model.traverse(function(child) {
             if (child.isMesh) {
               child.castShadow = true;
@@ -290,11 +213,7 @@ try {
 </body>
 </html>`);
   
-  // Create placeholder favicon to avoid 404 errors
-  console.log('Creating favicon.ico...');
-  writeFileSync('dist/favicon.ico', Buffer.from('00000100010010100000010020006804000016000000280000001000000020000000010020000000000000040000130b0000130b00000000000000000000', 'hex'));
-  
-  console.log('Render-optimized build completed successfully!');
+  console.log('Render-optimized build with CDN assets completed successfully!');
   process.exit(0);
 } catch (error) {
   console.error('Build failed:', error);
