@@ -1,0 +1,39 @@
+{
+    "version": 2,
+    "buildCommand": "npx vite build",
+    "installCommand": "npx vite",
+    "builds": [
+      {
+        "src": "package.json",
+        "use": "@vercel/static-build",
+        "config": {
+          "distDir": "dist"
+        }
+      }
+    ],
+    "routes": [
+      {
+        "src": "/assets/(.)",
+        "dest": "/$1"
+      },
+      {
+        "src": "/assets/(.)\\.js",
+        "headers": { "content-type": "application/javascript" },
+        "dest": "/$1.js"
+      },
+      {
+        "src": "/(.)\\.js",
+        "headers": { "content-type": "application/javascript" },
+        "dest": "/$1.js"
+      },
+      {
+        "src": "/(.)",
+        "dest": "/$1"
+      }
+    ],
+    "build": {
+      "env": {
+        "NODE_OPTIONS": "--max-old-space-size=4096"
+      }
+    }
+  }
