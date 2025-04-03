@@ -6,10 +6,10 @@ export class Temple {
         this.scene = scene;
         this.model = null;
         
-        // Créer le sol invisible
+
         this.createGround();
         
-        // Charger le modèle
+ 
         this.load();
     }
     
