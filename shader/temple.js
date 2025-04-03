@@ -25,7 +25,7 @@ export class Temple {
     
     load() {
         const loader = new GLTFLoader();
-        loader.load('../assets/aztec_temple.glb', (gltf) => {
+        loader.load('assets/aztec_temple.glb', (gltf) => {
             this.model = gltf.scene;
             this.model.scale.set(0.2, 0.2, 0.2);
             this.model.position.set(0, -25, 0);

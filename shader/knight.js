@@ -25,7 +25,7 @@ export class Knight {
     
     load() {
         const loader = new GLTFLoader();
-        loader.load('../assets/artorias.glb', (gltf) => {
+        loader.load('assets/artorias.glb', (gltf) => {
             this.group = new THREE.Group();
             this.scene.add(this.group);
 

@@ -23,7 +23,7 @@ export class Dragon {
     
     load() {
         const loader = new GLTFLoader();
-        loader.load('../assets/black_dragon_with_idle_animation.glb', (gltf) => {
+        loader.load('assets/black_dragon_with_idle_animation.glb', (gltf) => {
             this.model = gltf.scene;
             this.model.scale.set(8, 8, 8);
             this.model.position.set(0, -14, 5);

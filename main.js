@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { GUI } from 'dat.gui';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
-import { Dragon } from './shader/dragon.js';
-import { Knight } from './shader/knight.js';
-import { Temple } from './shader/temple.js';
+import { Dragon } from '/shader/dragon.js';
+import { Knight } from '/shader/knight.js';
+import { Temple } from '/shader/temple.js';
 
 
 const scene = new THREE.Scene();
@@ -18,7 +18,7 @@ document.body.appendChild(renderer.domElement);
 
 
 const rgbeLoader = new RGBELoader();
-rgbeLoader.load('./assets/sky.hdr', (texture) => {
+rgbeLoader.load('assets/sky.hdr', (texture) => {
     texture.mapping = THREE.EquirectangularReflectionMapping;
     scene.environment = texture;
     scene.background = texture;
