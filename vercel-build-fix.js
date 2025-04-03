@@ -3,10 +3,18 @@ import { spawn } from 'child_process';
 
 console.log('Starting Vite build process...');
 
+// Set environment variable to disable native extensions in rollup
+process.env.ROLLUP_SKIP_NODEJS_NATIVE = 'true';
+
 // Run vite build directly from node_modules
 const buildProcess = spawn('./node_modules/.bin/vite', ['build'], { 
   stdio: 'inherit',
-  shell: true
+  shell: true,
+  env: {
+    ...process.env,
+    ROLLUP_SKIP_NODEJS_NATIVE: 'true',
+    ROLLUP_NATIVE_DISABLE: 'true'
+  }
 });
 
 buildProcess.on('close', (code) => {

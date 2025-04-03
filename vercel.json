@@ -1,36 +1,5 @@
 {
-    "version": 2,
     "framework": "vite",
-    "buildCommand": "npm run build",
-    "outputDirectory": "dist",
-    "routes": [
-      {
-        "src": "/assets/(.*)",
-        "dest": "/assets/$1"
-      },
-      {
-        "src": "/(.*)\\.glb",
-        "headers": { "content-type": "model/gltf-binary" },
-        "dest": "/$1.glb"
-      },
-      {
-        "src": "/(.*)\\.js",
-        "headers": { "content-type": "application/javascript" },
-        "dest": "/$1.js"
-      },
-      {
-        "src": "/(.*)\\.glsl",
-        "headers": { "content-type": "text/plain" },
-        "dest": "/$1.glsl"
-      },
-      {
-        "src": "/(.*)\\.json",
-        "headers": { "content-type": "application/json" },
-        "dest": "/$1.json"
-      },
-      {
-        "src": "/(.*)",
-        "dest": "/index.html"
-      }
-    ]
-  }
+    "buildCommand": "npm run vercel-build",
+    "outputDirectory": "dist"
+}
