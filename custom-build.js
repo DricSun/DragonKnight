@@ -1,22 +1,11 @@
-// Custom build script that avoids using Rollup
+// Custom build script for regular scripts (no modules)
 import { createRequire } from 'module';
-import { execSync } from 'child_process';
 import { writeFileSync, copyFileSync, mkdirSync, existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
-
-// Function to fix imports in a file
-const fixImports = (content) => {
-  return content
-    .replace(/from\s+['"]three['"]/g, "from '../three.module.js'")
-    .replace(/from\s+['"]three\/examples\/jsm\/controls\/OrbitControls\.js['"]/g, "from '../controls/OrbitControls.js'")
-    .replace(/from\s+['"]three\/examples\/jsm\/loaders\/GLTFLoader\.js['"]/g, "from '../loaders/GLTFLoader.js'")
-    .replace(/from\s+['"]three\/examples\/jsm\/loaders\/DRACOLoader\.js['"]/g, "from '../loaders/DRACOLoader.js'")
-    .replace(/from\s+['"]dat\.gui['"]/g, "from '../dat.gui.module.js'");
-};
 
 try {
   console.log('Starting custom build process...');
@@ -26,55 +15,52 @@ try {
     mkdirSync('dist');
   }
   
-  // Copy node_modules libs we need
-  if (!existsSync('dist/lib')) {
-    mkdirSync('dist/lib', { recursive: true });
+  // Copy libraries as non-module scripts
+  if (!existsSync('dist/js')) {
+    mkdirSync('dist/js', { recursive: true });
   }
   
-  // Copy three.js files
-  console.log('Copying three.js modules...');
-  writeFileSync('dist/lib/three.module.js', readFileSync('node_modules/three/build/three.module.js'));
+  // Copy Three.js (non-module version)
+  console.log('Copying three.js libraries...');
+  writeFileSync('dist/js/three.min.js', readFileSync('node_modules/three/build/three.min.js'));
   
-  // Create the orbit controls file
-  if (!existsSync('dist/lib/controls')) {
-    mkdirSync('dist/lib/controls', { recursive: true });
-  }
+  // Copy OrbitControls
+  writeFileSync('dist/js/OrbitControls.js', readFileSync('node_modules/three/examples/js/controls/OrbitControls.js'));
   
-  // Copy and fix OrbitControls.js
-  let orbitControlsContent = readFileSync('node_modules/three/examples/jsm/controls/OrbitControls.js', 'utf-8');
-  orbitControlsContent = fixImports(orbitControlsContent);
-  writeFileSync('dist/lib/controls/OrbitControls.js', orbitControlsContent);
+  // Copy GLTFLoader
+  writeFileSync('dist/js/GLTFLoader.js', readFileSync('node_modules/three/examples/js/loaders/GLTFLoader.js'));
   
-  // Create the loaders directory
-  if (!existsSync('dist/lib/loaders')) {
-    mkdirSync('dist/lib/loaders', { recursive: true });
-  }
-  
-  // Copy and fix GLTFLoader.js
-  let gltfLoaderContent = readFileSync('node_modules/three/examples/jsm/loaders/GLTFLoader.js', 'utf-8');
-  gltfLoaderContent = fixImports(gltfLoaderContent);
-  writeFileSync('dist/lib/loaders/GLTFLoader.js', gltfLoaderContent);
-  
-  // Copy and fix DRACOLoader.js
-  let dracoLoaderContent = readFileSync('node_modules/three/examples/jsm/loaders/DRACOLoader.js', 'utf-8');
-  dracoLoaderContent = fixImports(dracoLoaderContent);
-  writeFileSync('dist/lib/loaders/DRACOLoader.js', dracoLoaderContent);
+  // Copy DRACOLoader
+  writeFileSync('dist/js/DRACOLoader.js', readFileSync('node_modules/three/examples/js/loaders/DRACOLoader.js'));
   
   // Copy dat.gui
-  writeFileSync('dist/lib/dat.gui.module.js', readFileSync('node_modules/dat.gui/build/dat.gui.module.js'));
+  writeFileSync('dist/js/dat.gui.min.js', readFileSync('node_modules/dat.gui/build/dat.gui.min.js'));
   
-  // Read original index.html
-  const indexContent = readFileSync('index.html', 'utf-8');
-  
-  // Modify to point to the correct JS file
-  const modifiedIndexContent = indexContent.replace(
-    '<script type="module" src="/main.js"></script>',
-    '<script type="module" src="./main-fixed.js"></script>'
-  );
-  
-  // Write modified index.html to dist
+  // Create a new index.html with non-module scripts
   console.log('Creating modified index.html...');
-  writeFileSync('dist/index.html', modifiedIndexContent);
+  writeFileSync('dist/index.html', `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Dragon vs Knight</title>
+    <style>
+        body { 
+            margin: 0; 
+            background-color: #f0f0f0;
+        }
+    </style>
+    <!-- Load libraries as regular scripts -->
+    <script src="./js/three.min.js"></script>
+    <script src="./js/OrbitControls.js"></script>
+    <script src="./js/GLTFLoader.js"></script>
+    <script src="./js/DRACOLoader.js"></script>
+    <script src="./js/dat.gui.min.js"></script>
+  </head>
+  <body>
+    <!-- Load our app scripts -->
+    <script src="./js/app.js"></script>
+  </body>
+</html>`);
   
   // Copy assets directory to dist/assets
   console.log('Copying assets directory...');
@@ -103,69 +89,54 @@ try {
   
   copyDirectory('assets', 'dist/assets');
   
-  // Copy and fix shader directory if it exists
+  // Convert all module files to a single non-module script
+  console.log('Creating combined app.js script...');
+  
+  // Read main.js
+  const mainJsContent = readFileSync('main.js', 'utf-8')
+    .replace(/import\s+\*\s+as\s+THREE\s+from\s+['"]three['"]/g, '// THREE is global')
+    .replace(/import\s+{\s*OrbitControls\s*}\s+from\s+['"]three\/examples\/jsm\/controls\/OrbitControls\.js['"]/g, '// OrbitControls is global')
+    .replace(/import\s+{\s*GLTFLoader\s*}\s+from\s+['"]three\/examples\/jsm\/loaders\/GLTFLoader\.js['"]/g, '// GLTFLoader is global')
+    .replace(/import\s+{\s*DRACOLoader\s*}\s+from\s+['"]three\/examples\/jsm\/loaders\/DRACOLoader\.js['"]/g, '// DRACOLoader is global')
+    .replace(/import\s+{\s*GUI\s*}\s+from\s+['"]dat\.gui['"]/g, '// GUI is global')
+    .replace(/('|")\/assets\//g, '$1./assets/')
+    .replace(/('|")\/shader\//g, '$1./js/shader/');
+  
+  // Combine shader files if they exist
+  let shaderJs = '';
   if (existsSync('shader')) {
     console.log('Copying shader directory...');
-    if (!existsSync('dist/shader')) {
-      mkdirSync('dist/shader', { recursive: true });
+    
+    // Create dist/js/shader directory
+    if (!existsSync('dist/js/shader')) {
+      mkdirSync('dist/js/shader', { recursive: true });
     }
     
-    // Copy shader files with import fixes
+    // Read all shader files
     const shaderFiles = readdirSync('shader', { withFileTypes: true });
     for (const file of shaderFiles) {
       if (file.isFile() && file.name.endsWith('.js')) {
-        const content = readFileSync(join('shader', file.name), 'utf-8');
-        const fixedContent = content
-          .replace(/import\s+\*\s+as\s+THREE\s+from\s+['"]three['"]/g, 'import * as THREE from "../lib/three.module.js"')
-          .replace(/import\s+{\s*OrbitControls\s*}\s+from\s+['"]three\/examples\/jsm\/controls\/OrbitControls\.js['"]/g, 'import { OrbitControls } from "../lib/controls/OrbitControls.js"')
-          .replace(/import\s+{\s*GLTFLoader\s*}\s+from\s+['"]three\/examples\/jsm\/loaders\/GLTFLoader\.js['"]/g, 'import { GLTFLoader } from "../lib/loaders/GLTFLoader.js"')
-          .replace(/import\s+{\s*DRACOLoader\s*}\s+from\s+['"]three\/examples\/jsm\/loaders\/DRACOLoader\.js['"]/g, 'import { DRACOLoader } from "../lib/loaders/DRACOLoader.js"')
-          .replace(/import\s+{\s*GUI\s*}\s+from\s+['"]dat\.gui['"]/g, 'import { GUI } from "../lib/dat.gui.module.js"')
+        let content = readFileSync(join('shader', file.name), 'utf-8')
+          .replace(/import\s+\*\s+as\s+THREE\s+from\s+['"]three['"]/g, '// THREE is global')
+          .replace(/import\s+{\s*OrbitControls\s*}\s+from\s+['"]three\/examples\/jsm\/controls\/OrbitControls\.js['"]/g, '// OrbitControls is global')
+          .replace(/import\s+{\s*GLTFLoader\s*}\s+from\s+['"]three\/examples\/jsm\/loaders\/GLTFLoader\.js['"]/g, '// GLTFLoader is global')
+          .replace(/import\s+{\s*DRACOLoader\s*}\s+from\s+['"]three\/examples\/jsm\/loaders\/DRACOLoader\.js['"]/g, '// DRACOLoader is global')
+          .replace(/import\s+{\s*GUI\s*}\s+from\s+['"]dat\.gui['"]/g, '// GUI is global')
           .replace(/('|")\/assets\//g, '$1../assets/')
-          .replace(/('|")\/shader\//g, '$1../shader/');
-        writeFileSync(join('dist/shader', file.name), fixedContent);
+          .replace(/('|")\/shader\//g, '$1./');
+        
+        content = `// From shader/${file.name}\n${content}\n\n`;
+        writeFileSync(join('dist/js/shader', file.name), content);
       } else if (file.isFile()) {
-        copyFileSync(join('shader', file.name), join('dist/shader', file.name));
+        copyFileSync(join('shader', file.name), join('dist/js/shader', file.name));
       }
     }
   }
   
-  // Create a mapping file to fix imports
-  console.log('Creating mapping wrapper...');
-  writeFileSync('dist/main-fixed.js', `
-// Import mapping wrapper
-import * as THREE from './lib/three.module.js';
-import { OrbitControls } from './lib/controls/OrbitControls.js';
-import { GLTFLoader } from './lib/loaders/GLTFLoader.js';
-import { DRACOLoader } from './lib/loaders/DRACOLoader.js';
-import { GUI } from './lib/dat.gui.module.js';
-
-// Make them available globally
-window.THREE = THREE;
-window.OrbitControls = OrbitControls;
-window.GLTFLoader = GLTFLoader;
-window.DRACOLoader = DRACOLoader;
-window.GUI = GUI;
-
-// Now import the main script
-import './main.js';
-  `);
-  
-  // Copy main.js to dist
-  console.log('Copying main.js...');
-  const mainJsContent = readFileSync('main.js', 'utf-8');
-  
-  // Modify main.js to use relative paths and fix imports
-  const modifiedMainJs = mainJsContent
-    .replace(/import\s+\*\s+as\s+THREE\s+from\s+['"]three['"]/g, 'import * as THREE from "./lib/three.module.js"')
-    .replace(/import\s+{\s*OrbitControls\s*}\s+from\s+['"]three\/examples\/jsm\/controls\/OrbitControls\.js['"]/g, 'import { OrbitControls } from "./lib/controls/OrbitControls.js"')
-    .replace(/import\s+{\s*GLTFLoader\s*}\s+from\s+['"]three\/examples\/jsm\/loaders\/GLTFLoader\.js['"]/g, 'import { GLTFLoader } from "./lib/loaders/GLTFLoader.js"')
-    .replace(/import\s+{\s*DRACOLoader\s*}\s+from\s+['"]three\/examples\/jsm\/loaders\/DRACOLoader\.js['"]/g, 'import { DRACOLoader } from "./lib/loaders/DRACOLoader.js"')
-    .replace(/import\s+{\s*GUI\s*}\s+from\s+['"]dat\.gui['"]/g, 'import { GUI } from "./lib/dat.gui.module.js"')
-    .replace(/('|")\/assets\//g, '$1./assets/')
-    .replace(/('|")\/shader\//g, '$1./shader/');
-  
-  writeFileSync('dist/main.js', modifiedMainJs);
+  // Write the combined app.js
+  writeFileSync('dist/js/app.js', `// Combined application script
+${mainJsContent}
+`);
   
   console.log('Custom build completed successfully!');
   process.exit(0);
