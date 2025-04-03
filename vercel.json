@@ -1,13 +1,15 @@
 {
     "version": 2,
-    "buildCommand": "npx vite build",
+    "buildCommand": "npm run build",
     "installCommand": "npm install",
+    "framework": "vite",
     "builds": [
       {
         "src": "package.json",
         "use": "@vercel/static-build",
         "config": {
-          "distDir": "dist"
+          "distDir": "dist",
+          "nodeVersion": "18.x"
         }
       }
     ],
