@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: dragon-knight
+    env: static
+    buildCommand: node custom-build.js
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /assets/*
+        destination: /assets/*
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /**/*.glb
+        name: Content-Type
+        value: model/gltf-binary
+      - path: /**/*.hdr
+        name: Content-Type
+        value: application/octet-stream
+      - path: /favicon.ico
+        name: Cache-Control
+        value: public, max-age=86400 
