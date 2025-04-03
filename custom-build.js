@@ -1,6 +1,6 @@
-// Static site build script optimized for Render with embedded assets
+// Static site build script with complete clean and external assets
 import { createRequire } from 'module';
-import { writeFileSync, copyFileSync, mkdirSync, existsSync, readdirSync, readFileSync } from 'fs';
+import { writeFileSync, copyFileSync, mkdirSync, existsSync, readdirSync, readFileSync, rmSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -8,24 +8,35 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 
 try {
-  console.log('Starting Render build process with CDN assets...');
+  console.log('Starting clean build process with external assets...');
   
-  // Create dist directory if it doesn't exist
-  if (!existsSync('dist')) {
-    mkdirSync('dist');
+  // Clean output directory if it exists
+  if (existsSync('dist')) {
+    console.log('Cleaning output directory...');
+    rmSync('dist', { recursive: true, force: true });
   }
   
-  // Create index.html with CDN-hosted models for Render
-  console.log('Creating index.html with external models...');
+  // Create clean dist directory
+  console.log('Creating fresh output directory...');
+  mkdirSync('dist');
+  
+  // Create an explicit build timestamp file for cache busting
+  const timestamp = new Date().toISOString();
+  writeFileSync('dist/build-timestamp.txt', `Build timestamp: ${timestamp}\n`);
+  
+  // Create index.html with CDN-hosted models
+  console.log('Creating static index.html with CDN-hosted models...');
   writeFileSync('dist/index.html', `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Dragon vs Knight</title>
+  <title>Dragon vs Knight (${timestamp})</title>
+  <!-- Cache busting with timestamp -->
+  <meta name="build-time" content="${timestamp}">
   <style>
     body { 
       margin: 0; 
-      background-color: #f0f0f0; 
+      background-color: #000000; 
       overflow: hidden;
     }
     #loading {
@@ -47,7 +58,8 @@ try {
       margin-top: 20px;
     }
   </style>
-  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+  <!-- Inline favicon to avoid 404 -->
+  <link rel="icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIKCggCCgoIAgoKCAIKCggCCgoIAgoKCAIKCggCCgoIAgoKCAIKCggCCgoIAAAAAAAAAAAAAAAAAAAAAAOTr7wKCgoJYgoKCnIKCgraCgoK2goKCtoKCgraCgoK2goKCtoKCgraCgoKcgoKCWOTr7wIAAAAAAAAAAAAAAAAAAAAAnJeRqoKCgv+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+cl5GqAAAAAAAAAAAAAAAAAAAAALh7P/+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/uHs//wAAAAAAAAAAAAAAAAAAAAC4ez//goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/goKC/7h7P/8AAAAAAAAAAAAAAAAAAAAAuHs//4KCgv+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+4ez//AAAAAAAAAAAAAAAARo3lZKlvMf+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/qW8x/0aN5WQAAAAAAAAAAEaN5f9Xn///qW8x/4KCgv+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/qW8x/1ef//9GjeX/AAAAAAAAAABGjeX/V5///6lvMf+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/goKC/6lvMf9Xn///Ro3l/wAAAAAAAAAARo3l/1ef//+pbzH/goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+pbzH/V5///0aN5f8AAAAAAAAAAEaN5WRGjeX/Ro3l/7h7P/+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+4ez//Ro3l/0aN5f9GjeVkAAAAAAAAAAAAAAAAAAAAALh7P/+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/goKC/7h7P/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAuHs//4KCgv+CgoL/goKC/4KCgv+CgoL/goKC/4KCgv+CgoL/uHs//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC4ez//nJeRqoKCgliCgoKcgoKCtoKCgraCgoK2goKCnIKCgljk6+8CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=">
 </head>
 <body>
   <div id="loading">
@@ -56,6 +68,7 @@ try {
     <p id="loading-status">Initializing...</p>
   </div>
 
+  <!-- Load Three.js and dependencies -->
   <script src="https://unpkg.com/three@0.175.0/build/three.min.js"></script>
   <script src="https://unpkg.com/three@0.175.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://unpkg.com/three@0.175.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -63,21 +76,24 @@ try {
   <script src="https://unpkg.com/dat.gui@0.7.9/build/dat.gui.min.js"></script>
 
   <script>
-    // Using hosted 3D models from reliable CDN service
+    // Log startup info with timestamp for debugging
+    console.log('Starting Dragon Knight application (${timestamp})');
+    
+    // Using hosted 3D models from reliable CDN services
     const MODELS = {
       dragon: 'https://models.readyplayer.me/64fa0336d1a68dae71a2c86e.glb',
       knight: 'https://market-assets.fra1.cdn.digitaloceanspaces.com/market-assets/models/knight/model.gltf',
       temple: 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/aztec-temple/model.gltf'
     };
 
-    // Wait for resources to load
+    // Wait for DOM to be ready
     window.addEventListener('DOMContentLoaded', function() {
       let scene, camera, renderer, controls;
       const loadingManager = new THREE.LoadingManager();
       const progressBar = document.getElementById('progress-bar');
       const loadingStatus = document.getElementById('loading-status');
       
-      // Loading manager setup
+      // Set up loading manager
       loadingManager.onProgress = function(url, loaded, total) {
         const percent = (loaded / total) * 100;
         progressBar.value = percent;
@@ -86,7 +102,7 @@ try {
       
       loadingManager.onLoad = function() {
         document.getElementById('loading').style.display = 'none';
-        console.log('All resources loaded');
+        console.log('All resources loaded successfully');
       };
       
       loadingManager.onError = function(url) {
@@ -134,6 +150,19 @@ try {
         directionalLight.castShadow = true;
         scene.add(directionalLight);
         
+        // Add ground plane
+        const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+        const groundMaterial = new THREE.MeshStandardMaterial({ 
+          color: 0x333333,
+          roughness: 0.8,
+          metalness: 0.2
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -20;
+        ground.receiveShadow = true;
+        scene.add(ground);
+        
         // Handle window resize
         window.addEventListener('resize', onWindowResize);
       }
@@ -142,7 +171,7 @@ try {
         // GLTF loader setup
         const loader = new THREE.GLTFLoader(loadingManager);
         
-        // Optional: Setup Draco loader for compressed models
+        // Setup Draco loader for compressed models
         const dracoLoader = new THREE.DRACOLoader();
         dracoLoader.setDecoderPath('https://unpkg.com/three@0.175.0/examples/js/libs/draco/');
         loader.setDRACOLoader(dracoLoader);
@@ -161,6 +190,14 @@ try {
           });
           scene.add(model);
           console.log('Dragon loaded successfully');
+        }, 
+        // Progress callback
+        function(xhr) {
+          console.log('Dragon: ' + (xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // Error callback  
+        function(error) {
+          console.error('Error loading dragon:', error);
         });
         
         // Load knight (using a public knight model)
@@ -178,6 +215,14 @@ try {
           });
           scene.add(model);
           console.log('Knight loaded successfully');
+        },
+        // Progress callback
+        function(xhr) {
+          console.log('Knight: ' + (xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // Error callback
+        function(error) {
+          console.error('Error loading knight:', error);
         });
         
         // Load temple (using a public temple model)
@@ -194,6 +239,14 @@ try {
           });
           scene.add(model);
           console.log('Temple loaded successfully');
+        }, 
+        // Progress callback
+        function(xhr) {
+          console.log('Temple: ' + (xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // Error callback
+        function(error) {
+          console.error('Error loading temple:', error);
         });
       }
       
@@ -213,7 +266,7 @@ try {
 </body>
 </html>`);
   
-  console.log('Render-optimized build with CDN assets completed successfully!');
+  console.log('Clean build completed successfully!');
   process.exit(0);
 } catch (error) {
   console.error('Build failed:', error);

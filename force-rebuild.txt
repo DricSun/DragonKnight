@@ -1,0 +1,2 @@
+Forced rebuild on: 2025-04-03-14:30
+This file forces Render to rebuild the application. 
