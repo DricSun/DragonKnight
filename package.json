@@ -3,7 +3,7 @@
   "scripts": {
     "dev": "npx vite",
     "build": "vite build",
-    "vercel-build": "node vercel-build-fix.js || node vercel-build-alt.js",
+    "vercel-build": "node custom-build.js",
     "preview": "npx vite preview"
   },
   "dependencies": {
@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "esbuild": "^0.19.12",
-    "rollup": "^4.6.0",
+    "rollup": "^3.29.4",
     "vite": "^5.1.4"
   },
   "engines": {

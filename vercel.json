@@ -1,5 +1,16 @@
 {
-    "framework": "vite",
-    "buildCommand": "npm run vercel-build",
-    "outputDirectory": "dist"
+    "version": 2,
+    "buildCommand": "node custom-build.js",
+    "outputDirectory": "dist",
+    "headers": [
+        {
+            "source": "/assets/(.*\\.glb)",
+            "headers": [
+                {
+                    "key": "Content-Type",
+                    "value": "model/gltf-binary"
+                }
+            ]
+        }
+    ]
 }
